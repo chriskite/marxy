@@ -13,8 +13,8 @@ type TasksS struct{}
 
 var _ = Suite(&TasksS{})
 
-func (s *TasksS) TestUnmarshalTasks(c *C) {
-	data := []byte(`{
+func testJson() []byte {
+	json := []byte(`{
 	"tasks": [
 		{
 			"appId": "/task1",
@@ -48,9 +48,12 @@ func (s *TasksS) TestUnmarshalTasks(c *C) {
 		}
 	]
 }`)
+	return json
+}
 
+func (s *TasksS) TestUnmarshalTasks(c *C) {
 	var r TasksResponse
-	err := json.Unmarshal(data, &r)
+	err := json.Unmarshal(testJson(), &r)
 	c.Assert(err, IsNil)
 
 	tasks := r.Tasks
