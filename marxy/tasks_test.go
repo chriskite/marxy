@@ -51,6 +51,21 @@ func testJson() []byte {
 	return json
 }
 
+func simpleTask() Task {
+	task := Task{
+		AppId:              "foo",
+		Id:                 "foo.1",
+		Host:               "localhost",
+		Ports:              []int64{31000},
+		StartedAt:          "2015-05-20T22:12:17.019Z",
+		StagedAt:           "2015-05-20T22:10:22.376Z",
+		Version:            "2015-05-20T22:10:16.322Z",
+		ServicePorts:       []int64{10000},
+		HealthCheckResults: nil,
+	}
+	return task
+}
+
 func (s *TasksS) TestUnmarshalTasks(c *C) {
 	var r TasksResponse
 	err := json.Unmarshal(testJson(), &r)
@@ -91,4 +106,31 @@ func (s *TasksS) TestUnmarshalTasks(c *C) {
 		ServicePorts:       []int64{10000},
 		HealthCheckResults: nil,
 	})
+}
+
+func (s *TasksS) TestServerLine(c *C) {
+	task := simpleTask()
+	expectedLine := "server foo-0 localhost:31000 check maxconn 0"
+	line, err := task.ServerLine(0, 0)
+	c.Assert(err, IsNil)
+	c.Check(line, Equals, expectedLine)
+}
+
+func (s *TasksS) TestServerLineBadIndex(c *C) {
+	task := simpleTask()
+	_, err := task.ServerLine(1, 0)
+	c.Assert(err, NotNil)
+	c.Check(err.Error(), Equals, "portIndex 1 out of range")
+}
+
+func (s *TasksS) TestIsAlive(c *C) {
+	task := simpleTask()
+	c.Check(task.IsAlive(), Equals, true)
+
+	task.HealthCheckResults = []HealthCheckResult{
+		{
+			Alive: false,
+		},
+	}
+	c.Check(task.IsAlive(), Equals, false)
 }

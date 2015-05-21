@@ -1,5 +1,9 @@
 package main
 
+import (
+	"fmt"
+)
+
 type TasksResponse struct {
 	Tasks []Task `json:"tasks"`
 }
@@ -23,4 +27,22 @@ type HealthCheckResult struct {
 	LastFailure         string `json:"lastFailure"`
 	ConsecutiveFailures int64  `json:"consecutiveFailures"`
 	Alive               bool   `json:"alive"`
+}
+
+func (t Task) ServerLine(portIndex, serverIndex int) (string, error) {
+	if portIndex < 0 || portIndex >= len(t.Ports) {
+		return "", fmt.Errorf("portIndex %d out of range", portIndex)
+	}
+
+	port := t.Ports[portIndex]
+	return fmt.Sprintf("server %s-%d %s:%d check maxconn 0", t.AppId, serverIndex, t.Host, port), nil
+}
+
+func (t Task) IsAlive() bool {
+	hcr := t.HealthCheckResults
+	if hcr == nil || len(hcr) == 0 {
+		return true
+	}
+
+	return hcr[0].Alive
 }
