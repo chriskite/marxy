@@ -30,6 +30,12 @@ defaults
   timeout client-fin  60s
   timeout tunnel      12h
 
+listen stats :9090
+    mode http
+    stats enable
+    stats realm HAProxy\ Statistics
+    stats uri /
+
 `
 	return header
 }
