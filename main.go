@@ -8,32 +8,54 @@ import (
 func main() {
 	host := "http://marathon.ocean"
 	marathon := NewMarathon(host)
-	config, err := getHAProxyConfig(marathon)
+	config, err := haproxyConfig(marathon)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(config)
 }
 
-func getHAProxyConfig(marathon Marathon) (string, error) {
+func haproxyConfigHeader() string {
+	header := `global
+  daemon
+  maxconn 4096
+
+defaults
+  log                 global
+  retries             3
+  maxconn             1024
+  timeout connect     5s
+  timeout client      60s
+  timeout server      60s
+  timeout client-fin  60s
+  timeout tunnel      12h
+
+`
+	return header
+}
+
+func haproxyConfig(marathon Marathon) (string, error) {
 	tasksResp, err := GetTasks(marathon)
 	if err != nil {
 		return "", err
 	}
-	taskMap := make(map[string][]Task)
+	// make a map from appId to slice of tasks in that app
+	appMap := make(map[string][]Task)
 	for _, task := range tasksResp.Tasks {
-		slice, ok := taskMap[task.EscapedAppId()]
+		slice, ok := appMap[task.EscapedAppId()]
 		if !ok {
 			slice = make([]Task, 0)
 		}
-		taskMap[task.EscapedAppId()] = append(slice, task)
+		appMap[task.EscapedAppId()] = append(slice, task)
 	}
 
-	var buffer bytes.Buffer
-	// TODO put haproxy header in buffer
+	// buffer containing the haproxy config
+	var config bytes.Buffer
 
-	// TODO this is wrong in the sense that it doesnt account for multiple service ports
-	for appId, tasks := range taskMap {
+	config.WriteString(haproxyConfigHeader())
+
+	// FIXME this is wrong in the sense that it doesnt account for multiple service ports
+	for appId, tasks := range appMap {
 		lines := make([]string, 0)
 
 		i := 0
@@ -49,20 +71,20 @@ func getHAProxyConfig(marathon Marathon) (string, error) {
 		}
 
 		if len(lines) > 0 {
-			// put service header in buffer
+			// put service header in config
 			servicePort := tasks[0].ServicePorts[0]
-			buffer.WriteString(fmt.Sprintf("listen %s-%d\n", appId, servicePort))
-			buffer.WriteString(fmt.Sprintf("  bind 0.0.0.0:%d\n", servicePort))
-			buffer.WriteString("  mode tcp\n  option tcplog\n  balance leastconn\n")
+			config.WriteString(fmt.Sprintf("listen %s-%d\n", appId, servicePort))
+			config.WriteString(fmt.Sprintf("  bind 0.0.0.0:%d\n", servicePort))
+			config.WriteString("  mode tcp\n  option tcplog\n  balance leastconn\n")
 
-			// put each server line in buffer
+			// put each server line in config
 			for _, line := range lines {
-				buffer.WriteString("  " + line + "\n")
+				config.WriteString("  " + line + "\n")
 			}
-			buffer.WriteString("\n")
+			config.WriteString("\n")
 		}
 	}
 
-	// output buffer
-	return buffer.String(), nil
+	// output config
+	return config.String(), nil
 }
