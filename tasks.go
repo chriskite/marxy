@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 type TasksResponse struct {
@@ -29,13 +30,17 @@ type HealthCheckResult struct {
 	Alive               bool   `json:"alive"`
 }
 
+func (t Task) EscapedAppId() string {
+	return strings.Replace(strings.TrimLeft(t.AppId, "/"), "/", "_", -1)
+}
+
 func (t Task) ServerLine(portIndex, serverIndex int) (string, error) {
 	if portIndex < 0 || portIndex >= len(t.Ports) {
 		return "", fmt.Errorf("portIndex %d out of range", portIndex)
 	}
 
 	port := t.Ports[portIndex]
-	return fmt.Sprintf("server %s-%d %s:%d check maxconn 0", t.AppId, serverIndex, t.Host, port), nil
+	return fmt.Sprintf("server %s-%d %s:%d check maxconn 0", t.EscapedAppId(), serverIndex, t.Host, port), nil
 }
 
 func (t Task) IsAlive() bool {
