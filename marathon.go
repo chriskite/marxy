@@ -80,3 +80,24 @@ func GetTasks(m Marathon) (TasksResponse, error) {
 	err = json.Unmarshal(body, &tasks)
 	return tasks, err
 }
+
+func marathonActor(marathon Marathon, runChan <-chan bool, configChan chan<- string) {
+	for {
+		select {
+		case _ = <-runChan:
+			tasksResp, err := GetTasks(marathon)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			config, err := haproxyConfig(tasksResp.Tasks)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			configChan <- config
+		}
+	}
+}

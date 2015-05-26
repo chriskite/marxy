@@ -110,7 +110,7 @@ func (s *TasksS) TestUnmarshalTasks(c *C) {
 
 func (s *TasksS) TestServerLine(c *C) {
 	task := simpleTask()
-	expectedLine := "server foo-0 localhost:31000 check maxconn 0"
+	expectedLine := "server foo-10000-0 localhost:31000 check maxconn 0"
 	line, err := task.ServerLine(0, 0)
 	c.Assert(err, IsNil)
 	c.Check(line, Equals, expectedLine)
@@ -124,13 +124,23 @@ func (s *TasksS) TestServerLineBadIndex(c *C) {
 }
 
 func (s *TasksS) TestIsAlive(c *C) {
+	// start with empty HealthCheckResults
 	task := simpleTask()
-	c.Check(task.IsAlive(), Equals, true)
+	c.Check(task.IsAlive(), Equals, false)
 
+	// set Alive false
 	task.HealthCheckResults = []HealthCheckResult{
 		{
 			Alive: false,
 		},
 	}
 	c.Check(task.IsAlive(), Equals, false)
+
+	// set Alive true
+	task.HealthCheckResults = []HealthCheckResult{
+		{
+			Alive: true,
+		},
+	}
+	c.Check(task.IsAlive(), Equals, true)
 }
