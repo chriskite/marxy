@@ -51,11 +51,11 @@ func (t Task) ServerLine(portIndex, serverIndex int) (string, error) {
 	), nil
 }
 
-// A Task is alive iff it has passed and is currently passing health checks
+// A Task is alive if it has no health checks or hasn't failed one
 func (t Task) IsAlive() bool {
 	hcr := t.HealthCheckResults
 	if hcr == nil || len(hcr) == 0 {
-		return false
+		return true
 	}
 
 	return hcr[0].Alive

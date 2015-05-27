@@ -36,6 +36,8 @@ func unauthTasksReq(baseUrl string) (*http.Request, error) {
 		return req, err
 	}
 
+	req.Header.Set("Accept", "application/json")
+
 	return req, nil
 }
 
@@ -68,6 +70,9 @@ func GetTasks(m Marathon) (TasksResponse, error) {
 	}
 
 	resp, err := client.Do(req)
+	if err != nil {
+		return tasks, err
+	}
 	if resp.StatusCode != 200 {
 		return tasks, fmt.Errorf("HTTP request failed (%d)", resp.StatusCode)
 	}

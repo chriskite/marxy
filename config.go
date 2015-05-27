@@ -3,27 +3,60 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"sort"
 )
+
+const tmpConfigFile = "/tmp/haproxy.cfg"
+const configFile = "/etc/haproxy/haproxy.cfg"
+const pidfile = "/var/run/haproxy.pid"
 
 func configActor(configChan <-chan string) {
 	var oldConfig string
 	for {
 		select {
 		case config := <-configChan:
-			handleConfig(config, oldConfig)
+			err := handleConfig(config, oldConfig)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 			oldConfig = config
 		}
 	}
 }
 
-func handleConfig(config string, oldConfig string) {
+func handleConfig(config string, oldConfig string) error {
 	if config != oldConfig {
-		fmt.Println(config)
 		// write temp file
+		//fmt.Println(config)
+		err := ioutil.WriteFile(tmpConfigFile, []byte(config), 0644)
+		if err != nil {
+			return err
+		}
+
 		// atomic mv temp file to config file
-		// reload haproxy
+		err = os.Rename(tmpConfigFile, configFile)
+		if err != nil {
+			return err
+		}
+
+		return reloadHaproxy()
 	}
+	return nil
+}
+
+func reloadHaproxy() error {
+	fmt.Println("reloading haproxy")
+	pid, err := ioutil.ReadFile(pidfile)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(pid))
+	cmd := exec.Command("haproxy", "-f", "/etc/haproxy/haproxy.cfg", "-p", pidfile, "-sf", string(pid))
+	return cmd.Run()
 }
 
 func haproxyConfigHeader() string {
