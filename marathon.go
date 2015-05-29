@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -92,13 +93,13 @@ func marathonActor(marathon Marathon, runChan <-chan bool, configChan chan<- str
 		case _ = <-runChan:
 			tasksResp, err := GetTasks(marathon)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
 
 			config, err := haproxyConfig(tasksResp.Tasks)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
 

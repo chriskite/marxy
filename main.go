@@ -36,10 +36,9 @@ func run(c *cli.Context) {
 		return
 	}
 
-	var marathon Marathon
-
 	user, pass := c.String("http-user"), c.String("http-pass")
 
+	var marathon Marathon
 	if user != "" && pass != "" {
 		marathon = NewAuthMarathon(host, user, pass)
 	} else {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"sort"
@@ -20,7 +21,7 @@ func configActor(configChan <-chan string) {
 		case config := <-configChan:
 			err := handleConfig(config, oldConfig)
 			if err != nil {
-				fmt.Println(err.Error())
+				log.Println(err.Error())
 			}
 			oldConfig = config
 		}
@@ -30,7 +31,7 @@ func configActor(configChan <-chan string) {
 func handleConfig(config string, oldConfig string) error {
 	if config != oldConfig {
 		// write temp file
-		//fmt.Println(config)
+		log.Println(config)
 		err := ioutil.WriteFile(tmpConfigFile, []byte(config), 0644)
 		if err != nil {
 			return err
@@ -48,13 +49,12 @@ func handleConfig(config string, oldConfig string) error {
 }
 
 func reloadHaproxy() error {
-	fmt.Println("reloading haproxy")
+	log.Println("Reloading HAProxy")
 	pid, err := ioutil.ReadFile(pidfile)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(string(pid))
 	cmd := exec.Command("haproxy", "-f", "/etc/haproxy/haproxy.cfg", "-p", pidfile, "-sf", string(pid))
 	return cmd.Run()
 }

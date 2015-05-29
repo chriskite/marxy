@@ -126,7 +126,7 @@ func (s *TasksS) TestServerLineBadIndex(c *C) {
 func (s *TasksS) TestIsAlive(c *C) {
 	// start with empty HealthCheckResults
 	task := simpleTask()
-	c.Check(task.IsAlive(), Equals, false)
+	c.Check(task.IsAlive(), Equals, true)
 
 	// set Alive false
 	task.HealthCheckResults = []HealthCheckResult{
