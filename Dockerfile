@@ -1,4 +1,4 @@
-FROM phusion/baseimage:0.9.16
+FROM phusion/baseimage:0.9.18
 
 # Set correct environment variables.
 ENV HOME /root
@@ -7,24 +7,24 @@ ENV HOME /root
 RUN \
   sed -i 's/^# \(.*-backports\s\)/\1/g' /etc/apt/sources.list && \
   apt-get update && \
-  apt-get install -y haproxy=1.5.3-1~ubuntu14.04.1 wget git && \
+  apt-get install -y haproxy=1.5.14-1ubuntu0.15.10.1~ubuntu14.04.1 wget git && \
   sed -i 's/^ENABLED=.*/ENABLED=1/' /etc/default/haproxy && \
   rm -rf /var/lib/apt/lists/*
 
 # install and setup go
-RUN wget https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz
-RUN tar -C /usr/local -zxf go1.4.2.linux-amd64.tar.gz
+RUN wget https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
+RUN tar -C /usr/local -zxf go1.6.linux-amd64.tar.gz
 RUN mkdir /go
 ENV GOPATH=/go
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-# build kawana
+# build marxy
 RUN go get github.com/tools/godep
 ADD . /go/src/github.com/chriskite/marxy
 WORKDIR /go/src/github.com/chriskite/marxy
 RUN godep go install
 
-# setup kawana service
+# setup marxy service
 RUN mkdir /etc/service/marxy
 ADD run /etc/service/marxy/run
 
